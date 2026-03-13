@@ -2073,7 +2073,7 @@ test_IORING_REGISTER_ZCRX_IFQ(int fd_null)
 	memset(zcrx_ifq, 0, sizeof(*zcrx_ifq));
 	zcrx_ifq->if_idx = 0xaaaa;
 	zcrx_ifq->offsets.__resv2 = 0xbbbb;
-	zcrx_ifq->__resv2 = 0xcccc;
+	zcrx_ifq->rx_buf_len = 0xcccc;
 	zcrx_ifq->offsets.__resv[0] = 0xddddddddddddddddULL;
 	zcrx_ifq->offsets.__resv[1] = 0xeeeeeeeeeeeeeeeeULL;
 	zcrx_ifq->__resv[0] = 0x1111111111111111ULL;
@@ -2084,7 +2084,7 @@ test_IORING_REGISTER_ZCRX_IFQ(int fd_null)
 	printf("io_uring_register(%u<%s>, " XLAT_FMT
 	       ", {if_idx=%u, if_rxq=0, rq_entries=0, flags=0"
 	       ", area_ptr=NULL, region_ptr=NULL"
-	       ", offsets={head=0, tail=0, rqes=0, __resv2=%#x"
+	       ", offsets={head=0, tail=0, rqes=0, rx_buf_len=%u"
 	       ", __resv=[%#llx, %#llx]}"
 	       ", zcrx_id=0, __resv2=%#x"
 	       ", __resv=[%#llx, %#llx, %#llx]}, 1) = %s\n",
@@ -2094,7 +2094,7 @@ test_IORING_REGISTER_ZCRX_IFQ(int fd_null)
 	       zcrx_ifq->offsets.__resv2,
 	       (unsigned long long) zcrx_ifq->offsets.__resv[0],
 	       (unsigned long long) zcrx_ifq->offsets.__resv[1],
-	       zcrx_ifq->__resv2,
+	       zcrx_ifq->rx_buf_len,
 	       (unsigned long long) zcrx_ifq->__resv[0],
 	       (unsigned long long) zcrx_ifq->__resv[1],
 	       (unsigned long long) zcrx_ifq->__resv[2],
@@ -2366,6 +2366,7 @@ test_IORING_REGISTER_QUERY(int fd_null)
 	zcrx_data->register_flags = ZCRX_REG_IMPORT;
 	zcrx_data->area_flags = IORING_ZCRX_AREA_DMABUF;
 	zcrx_data->nr_ctrl_opcodes = 5;
+	zcrx_data->features = ZCRX_FEATURE_RX_PAGE_SIZE;
 	zcrx_data->rq_hdr_size = 64;
 	zcrx_data->rq_hdr_alignment = 8;
 
@@ -2373,7 +2374,7 @@ test_IORING_REGISTER_QUERY(int fd_null)
 	printf("io_uring_register(%u<%s>, " XLAT_FMT
 	       ", {query_data=%p, query_op=" XLAT_FMT ", size=%u, result=0"
 	       ", query_data={register_flags=" XLAT_FMT ", area_flags=" XLAT_FMT
-	       ", nr_ctrl_opcodes=%u, rq_hdr_size=%u, rq_hdr_alignment=%u}"
+	       ", nr_ctrl_opcodes=%u, features=" XLAT_FMT ", rq_hdr_size=%u, rq_hdr_alignment=%u}"
 	       ", next_entry=NULL}, 0) = %s\n",
 	       fd_null, path_null,
 	       XLAT_SEL(query_ops.val, query_ops.str),
@@ -2383,6 +2384,7 @@ test_IORING_REGISTER_QUERY(int fd_null)
 	       XLAT_ARGS(ZCRX_REG_IMPORT),
 	       XLAT_ARGS(IORING_ZCRX_AREA_DMABUF),
 	       zcrx_data->nr_ctrl_opcodes,
+	       XLAT_ARGS(ZCRX_FEATURE_RX_PAGE_SIZE),
 	       zcrx_data->rq_hdr_size,
 	       zcrx_data->rq_hdr_alignment,
 	       errstr);
@@ -2570,7 +2572,6 @@ test_IORING_REGISTER_QUERY(int fd_null)
 	hdr->result = 0;
 
 	memset(zcrx_data, 0, sizeof(*zcrx_data));
-	zcrx_data->__resv1 = 0xdeadbeef;
 	zcrx_data->__resv2 = 0xcafebabe12345678ULL;
 
 	sys_io_uring_register(fd_null, query_ops.val, hdr, 0);
@@ -2578,14 +2579,13 @@ test_IORING_REGISTER_QUERY(int fd_null)
 	       ", {query_data=%p, query_op=" XLAT_FMT ", size=%u, result=0"
 	       ", query_data={register_flags=0, area_flags=0"
 	       ", nr_ctrl_opcodes=0, rq_hdr_size=0"
-	       ", rq_hdr_alignment=0, __resv1=%#x, __resv2=%#llx}"
+	       ", rq_hdr_alignment=0, features=0, __resv2=%#llx}"
 	       ", next_entry=NULL}, 0) = %s\n",
 	       fd_null, path_null,
 	       XLAT_SEL(query_ops.val, query_ops.str),
 	       zcrx_data,
 	       XLAT_ARGS(IO_URING_QUERY_ZCRX),
 	       (unsigned int) sizeof(*zcrx_data),
-	       zcrx_data->__resv1,
 	       (unsigned long long) zcrx_data->__resv2,
 	       errstr);
 
